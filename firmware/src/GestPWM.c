@@ -14,19 +14,38 @@
 
 
 #include "GestPWM.h"
+#include "Mc32DriverLcd.h"
 #include "Mc32DriverAdc.h"
-#include "APP.h"
+#include "app.h"
+#include "peripheral/oc/plib_oc.h"
 
-S_pwmSettings PWMData;      // pour les settings
-S_ADCResults ReadAdc;
+S_pwmSettings PwmData = {.cntAdc=0};
         
 void GPWM_Initialize(S_pwmSettings *pData)
 {
-   // Init les data 
+    // Init les data 
+    pData->cntAdc = 0;
     
-   // Init état du pont en H
+    // Init état du pont en H
+    //initialiser le Hbrige
+    BSP_EnableHbrige();
     
-   // lance les timers et OC
+    // lance les timers et OC
+    /*initalisation des timers*/
+    // DRV_TMR0_Start();  
+    DRV_TMR0_Start();
+    // DRV_TMR1_Start();  
+    DRV_TMR1_Start();           
+    // DRV_TMR2_Start();  
+    DRV_TMR2_Start();            
+    // DRV_TMR3_Start();  
+    DRV_TMR3_Start();
+
+    /*Initialisation des OC*/
+    //init OC0 
+    DRV_OC0_Start();
+    //init OC1 
+    DRV_OC1_Start(); 
     
 }
 
@@ -38,13 +57,13 @@ void GPWM_GetSettings(S_pwmSettings *pData)
     
     /* Calcul de la consigne de vitesse */
     pData->absSpeed = pData->adcResFilt_Can0 * SPEED_RATIO;
-    pData->SpeedSetting = (float)pData->absSpeed - (float)99;
+    pData->SpeedSetting = pData->absSpeed - 99;
     pData->absSpeed = abs(pData->SpeedSetting);
     
     
-    /* Calcul consigne de la vitesse */
+    /* Calcul consigne de l'angle */
     pData->absAngle = pData->adcResFilt_Can1 * (180 / ADC_RES);
-    pData->AngleSetting = (float)pData->absSpeed - (float)90;
+    pData->AngleSetting = pData->absAngle - 90;
     pData->absAngle = abs(pData->AngleSetting);
     
     
@@ -57,83 +76,101 @@ void GPWM_DispSettings(S_pwmSettings *pData)
             lcd_gotoxy(1,1);
             printf_lcd("TP1 PWM 2022-2023");
             lcd_gotoxy(1,2);
-            printf_lcd("SpeedSetting %f", pData->SpeedSetting); 
+            /* Affichage vitesse */
+            printf_lcd("SpeedSetting");
+            lcd_gotoxy(17,2);
+            printf_lcd("%4d", (int)pData->SpeedSetting);
+            /* Affichage vitesse absolue */
             lcd_gotoxy(1,3);
-            printf_lcd("absSpeed, %f", pData->absSpeed);
+            printf_lcd("absSpeed");
+            lcd_gotoxy(17,3);
+            printf_lcd("%4d", (int)pData->absSpeed);
+            /* Afficahge de l'angle */
             lcd_gotoxy(1,4);
-            printf_lcd("Angle, %f", pData->AngleSetting);
+            printf_lcd("Angle");
+            lcd_gotoxy(17,4);
+            printf_lcd("%4d", (int)pData->AngleSetting);
             
             
 }
 
 // Execution PWM et gestion moteur à partir des info dans structure
 void GPWM_ExecPWM(S_pwmSettings *pData)
-{
- float old_Data;
- static int i_speeed;
- static int i_angle; 
-    
+{ 
+    uint16_t t2_Width = 0;
+    uint16_t t3_Width = 0;
+    float ratioAngle = 0;
+ 
     //tourner le moteur de gauche à droite.............................
-    if(pData->SpeedSetting <= 1)
+    if(pData->SpeedSetting < 0)
     {
         AIN1_HBRIDGE_W = 1; //AIN1 High
         AIN2_HBRIDGE_W = 0; //AIN2 LOW
         STBY_HBRIDGE_W = 1; // STBY High
     }
-    //tourner le moteur de droite à gauche.........................
-    if (pData->SpeedSetting >= 1)
+    //tourner le moteur de droite à gauche............................
+    if (pData->SpeedSetting > 0)
     {
         AIN1_HBRIDGE_W = 0; //AIN1 LOW
         AIN2_HBRIDGE_W = 1; //AIN2 High
         STBY_HBRIDGE_W = 1; // STBY High
     }
-    else 
+    if (pData->SpeedSetting == 0)
     {
         //moteur ne tourne plus, il passe en stanby
         STBY_HBRIDGE_W = 0; // STBY LOW       
     }
-    //déterminer le nombre d'impulsion pour OC2 à partir de absSpeed
-    old_Data = pData->absSpeed; 
-    if ( old_Data != pData->absSpeed)
-    {
-        i_speeed ++;
-    }
-    //Déterminer la valeur cyclique du PWM
-    PLIB_OC_PulseWidth16BitSet(i_speeed,pData->absSpeed);
-    //déterminer le nombre d'impulsion pour OC3 à partir de absAngle
-      old_Data = pData->AngleSetting; 
-    if ( old_Data != pData->AngleSetting)
-    {
-        i_angle ++;
-    }
     
+    /* Obtention de la periode du timer */
+    t2_Width = DRV_TMR1_PeriodValueGet();  
+    /* Calcul du rapport de la pulse avec la vitesse */
+    t2_Width = t2_Width * (float)(pData->absSpeed/99.0);
+    /* MAJ de la pulse du PWM */
+    PLIB_OC_PulseWidth16BitSet(_OCMP2_BASE_ADDRESS, t2_Width);
+    
+    /* Calcul du ratio de l'angle */
+    ratioAngle = (float)((pData->AngleSetting+90)/180.0);
+    /* Calcul de la largeur de la pulse en prenant directement en compte la frequence du timer */
+    t3_Width = (DRV_TMR2_CounterFrequencyGet()/(1/(SERVO_MAX-SERVO_MIN)))*ratioAngle;
+    /* Ajouter le minimum pour le servo moteur */
+    t3_Width += DRV_TMR2_CounterFrequencyGet()/(1/(SERVO_MIN));    
     //génération d'une impulsion dont la largeur est proportionnelle à l'angle
-    PLIB_OC_PulseWidth16BitSet(i_angle,pData->AngleSetting);
+    PLIB_OC_PulseWidth16BitSet(_OCMP3_BASE_ADDRESS, t3_Width);
     
  }
     
-   
-  
-    
-
 // Execution PWM software
 void GPWM_ExecPWMSoft(S_pwmSettings *pData)
 {
-    pData->absSpeed;
+    static uint8_t pwmCnt;
+    
+    /* Incrément PWM */
+    pwmCnt++;
+    
+    /* Gestion du temps ON, INVERSE de mesuré car OPEN-DRAIN */
+    if(pwmCnt <= pData->absSpeed)
+        BSP_LEDOn(BSP_LED_2);
+    /* Temps OFF */
+    else 
+        BSP_LEDOff(BSP_LED_2);
+    /* Quand atteint la période */
+    if(pwmCnt >= 100)
+        pwmCnt = 0;
     
     
 }
 
-uint8_t GPWM_ReadAdcFiltered(S_pwmSettings *pData)
+void GPWM_ReadAdcFiltered(S_pwmSettings *pData)
 {
+    /* Variable comptage */
     uint8_t i = 0; 
-    uint8_t flagZero = 0; 
     
-    /* Si le compteur de nombre d'échantillons pour filtrage atteint */
-    if(pData->cntAdc < FILTER_SIZE)
+    //lecture nouvelles valeurs ch0 et ch1
+    pData->AdcResBuff[pData->cntAdc] = BSP_ReadAllADC();
+    
+    //incrémentation compteur
+    if(pData->cntAdc < FILTER_SIZE-1)
     {
-        /* Sauvegarde les cannaux dans le buffer de mesure */
-        pData->AdcResBuff[pData->cntAdc] = BSP_ReadAllADC();
         /* Incremente le timer de filtrage */
         pData->cntAdc = pData->cntAdc +1;
     }
@@ -142,20 +179,17 @@ uint8_t GPWM_ReadAdcFiltered(S_pwmSettings *pData)
         /* Relance le filtrage */
         pData->cntAdc = 0;
     }
+    
     /* Somme du buffer pour le filtrage */
+    pData->adcResFilt_Can0 = 0;
+    pData->adcResFilt_Can1 = 0;
     for(i = 0; i<FILTER_SIZE; i++)
     {
-        pData->adcResFilt_Can0 = pData->adcResFilt_Can0 + pData->AdcResBuff[i].Chan0;
-        pData->adcResFilt_Can1 = pData->adcResFilt_Can1 + pData->AdcResBuff[i].Chan1;
-        
-        if((pData->AdcResBuff[i].Chan0 == 0) || (pData->AdcResBuff[i].Chan1 == 0))
-            flagZero = 1;
+        /* Somme des deux cannaux */
+        pData->adcResFilt_Can0 += pData->AdcResBuff[i].Chan0;
+        pData->adcResFilt_Can1 += pData->AdcResBuff[i].Chan1;
     }  
-    /* Moyenne du buffer avec protection de division avec 0 */
-    if((pData->adcResFilt_Can0 != 0) && (pData->adcResFilt_Can1 != 0))
-    {
-        pData->adcResFilt_Can0 /= FILTER_SIZE;
-        pData->adcResFilt_Can1 /= FILTER_SIZE;
-    }
-    return flagZero;
+    /* Moyenne de la somme du filtre */
+    pData->adcResFilt_Can0 /= (float)FILTER_SIZE;
+    pData->adcResFilt_Can1 /= (float)FILTER_SIZE;
 }
