@@ -57,7 +57,8 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include "GestPWM.h"
 #include "Mc32DriverLcd.h"
 #include "Mc32Delays.h"
-
+#include "Mc32gest_RS232.h"
+#include "GestPWM.h"
 
 // *****************************************************************************
 // *****************************************************************************
@@ -151,9 +152,9 @@ void APP_Tasks ( void )
         {
             /* Initialisation Displaying */
             lcd_init(); 
-            printf_lcd("TP1 PWM 2022-2023");
+            printf_lcd("TP2 PWM 2022-2023");
             lcd_gotoxy(1,2);
-            printf_lcd("Ali Zoubir"); 
+            printf_lcd("Joao"); 
             lcd_gotoxy(1,3);
             printf_lcd("Caroline Mieville"); 
             lcd_bl_on();
@@ -183,7 +184,7 @@ void APP_Tasks ( void )
             BSP_EnableHbrige();
             
             /* Initialize GPWM */
-            //GPWM_Initialize(&PwmData);
+            InitFifoComm();
             
             APP_UpdateState(APP_STATE_WAIT);
             
@@ -199,6 +200,9 @@ void APP_Tasks ( void )
         }
         case APP_STATE_SERVICE_TASKS:
         {
+            GPWM_GetSettings(&PwmData);
+            GPWM_DispSettings(&PwmData);
+            GPWM_ExecPWM(&PwmData);
             break;
         }
 

@@ -63,6 +63,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include "app.h"
 #include "system_definitions.h"
 #include "GestPWM.h"
+#include "Mc32DriverLcd.h"
 
 
 
@@ -71,42 +72,56 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 // Section: System Interrupt Vector Functions
 // *****************************************************************************
 // *****************************************************************************
-void __ISR(_UART_1_VECTOR, ipl5AUTO) _IntHandlerDrvUsartInstance0(void)
-{
-    DRV_USART_TasksTransmit(sysObj.drvUsart0);
-    DRV_USART_TasksError(sysObj.drvUsart0);
-    DRV_USART_TasksReceive(sysObj.drvUsart0);
-}
+//void __ISR(_UART_1_VECTOR, ipl5AUTO) _IntHandlerDrvUsartInstance0(void)
+//{
+//    DRV_USART_TasksTransmit(sysObj.drvUsart0);
+//    DRV_USART_TasksError(sysObj.drvUsart0);
+//    DRV_USART_TasksReceive(sysObj.drvUsart0);
+//}
     
  
      
 
 void __ISR(_TIMER_1_VECTOR, ipl4AUTO) IntHandlerDrvTmrInstance0(void)
 {
-    static uint32_t i=0;
-      //paramètrage du timer
+  //3 seconde initialisation
+    static uint32_t i = 0;
+
+    /* Mesure durée interrupt */
+    BSP_LEDOn(BSP_LED_0);
+
+    //paramètrage du timer
     PLIB_INT_SourceFlagClear(INT_ID_0,INT_SOURCE_TIMER_1);
-    
-    //incrémenté l'indice
-     i++;
-     
-     //Entré lorsque 3s on passer après l'initialisation
-    if (i == 150)
+
+    if(i == 150)
+    {   
+        /* Led flag mesure 3 sec */
+        BSP_LEDOff(BSP_LED_4);
+        /* Nettoye l'écran */
+        lcd_ClearLine(1);
+        lcd_ClearLine(2);
+        lcd_ClearLine(3);
+        lcd_ClearLine(4);
+        /* Incrémente pour executer directement la suite */
+        i++;
+    }
+    //Entré lorsque 3s on passer après l'initialisation
+    if (i >= 151)
     {
         APP_UpdateState(APP_STATE_SERVICE_TASKS); 
-       //toggle LED0 a chaque entrée dans l'interuption
-        BSP_LEDToggle(BSP_LED_0);
-        GPWM_GetSettings(&PwmData);
-        GPWM_DispSettings(&PwmData);
-       //permet de ne pas attendre 3s après avoir déjà executer l'initialisation
-        i = 149;
     }
     else
     {
-      //Lors de l'initialisation, va dans l'état vait jusqu'à attendre 3 seconde
-      APP_UpdateState(APP_STATE_WAIT);      
+        /* Led flag mesure 3 sec */
+        BSP_LEDOn(BSP_LED_4);
+        //incrémenté l'indice
+        i++;
+        //Lors de l'initialisation, va dans l'état vait jusqu'à attendre 3 seconde
+        APP_UpdateState(APP_STATE_WAIT);      
     }
-    
+
+    /* Mesure durée interrupt */
+    BSP_LEDOff(BSP_LED_0);
 }
 void __ISR(_TIMER_2_VECTOR, ipl0AUTO) IntHandlerDrvTmrInstance1(void)
 {
