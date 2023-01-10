@@ -70,12 +70,20 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 // Section: System Interrupt Vector Functions
 // *****************************************************************************
 // *****************************************************************************
+void __ISR(_UART_1_VECTOR, ipl5AUTO) _IntHandlerDrvUsartInstance0(void)
+{
+    DRV_USART_TasksTransmit(sysObj.drvUsart0);
+    DRV_USART_TasksError(sysObj.drvUsart0);
+    DRV_USART_TasksReceive(sysObj.drvUsart0);
+}
+    
+ 
+     
+
 void __ISR(_TIMER_1_VECTOR, ipl4AUTO) IntHandlerDrvTmrInstance0(void)
 {
-    //3 seconde initialisation
-    static uint32_t i = 0;
-    
-    //paramètrage du timer
+    static uint32_t i=0;
+      //paramètrage du timer
     PLIB_INT_SourceFlagClear(INT_ID_0,INT_SOURCE_TIMER_1);
     
     //incrémenté l'indice
@@ -89,7 +97,6 @@ void __ISR(_TIMER_1_VECTOR, ipl4AUTO) IntHandlerDrvTmrInstance0(void)
         BSP_LEDToggle(BSP_LED_0);
         GPWM_GetSettings(&PwmData);
         GPWM_DispSettings(&PwmData);
-        GPWM_ExecPWMSoft(&PwmData);
        //permet de ne pas attendre 3s après avoir déjà executer l'initialisation
         i = 149;
     }
@@ -99,7 +106,6 @@ void __ISR(_TIMER_1_VECTOR, ipl4AUTO) IntHandlerDrvTmrInstance0(void)
       APP_UpdateState(APP_STATE_WAIT);      
     }
     
-     
 }
 void __ISR(_TIMER_2_VECTOR, ipl0AUTO) IntHandlerDrvTmrInstance1(void)
 {
@@ -109,13 +115,6 @@ void __ISR(_TIMER_3_VECTOR, ipl0AUTO) IntHandlerDrvTmrInstance2(void)
 {
     PLIB_INT_SourceFlagClear(INT_ID_0,INT_SOURCE_TIMER_3);
 }
-void __ISR(_TIMER_4_VECTOR, ipl4AUTO) IntHandlerDrvTmrInstance3(void)
-{
-    //toggle LED1 a chaque entrée dans l'interuption
-    BSP_LEDToggle(BSP_LED_1);
-    PLIB_INT_SourceFlagClear(INT_ID_0,INT_SOURCE_TIMER_4);
-}
- 
  
 /*******************************************************************************
  End of File

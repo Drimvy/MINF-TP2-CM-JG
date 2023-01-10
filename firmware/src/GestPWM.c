@@ -15,7 +15,9 @@
 
 #include "GestPWM.h"
 #include "Mc32DriverAdc.h"
+#include "Mc32DriverLcd.h"
 #include "app.h"
+#include "peripheral/oc/plib_oc.h"
 
 //S_pwmSettings PWMData;      // pour les settings
 //S_ADCResults ReadAdc;
@@ -127,24 +129,7 @@ void GPWM_ExecPWM(S_pwmSettings *pData)
   
     
 
-// Execution PWM software
-void GPWM_ExecPWMSoft(S_pwmSettings *pData)
-{
-    static pwmCnt = 0;
-    
-    /* Gestion du PWM software */
-    if(pwmCnt < pData->absSpeed)
-    {
-        pwmCnt++;
-        BSP_LEDOn(BSP_LED_2);
-    }
-    else
-    {
-        BSP_LEDOff(BSP_LED_2);
-    }
-    
-    
-}
+
 
 void GPWM_ReadAdcFiltered(S_pwmSettings *pData)
 {

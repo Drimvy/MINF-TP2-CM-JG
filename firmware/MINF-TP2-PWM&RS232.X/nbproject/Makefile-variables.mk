@@ -6,8 +6,8 @@
 CND_BASEDIR=`pwd`
 # default configuration
 CND_ARTIFACT_DIR_default=dist/default/production
-CND_ARTIFACT_NAME_default=MINF-TP1-CM-AZ.X.production.hex
-CND_ARTIFACT_PATH_default=dist/default/production/MINF-TP1-CM-AZ.X.production.hex
+CND_ARTIFACT_NAME_default=MINF-TP2-PWM_RS232.X.production.hex
+CND_ARTIFACT_PATH_default=dist/default/production/MINF-TP2-PWM_RS232.X.production.hex
 CND_PACKAGE_DIR_default=${CND_DISTDIR}/default/package
-CND_PACKAGE_NAME_default=minf-tp1-cm-az.x.tar
-CND_PACKAGE_PATH_default=${CND_DISTDIR}/default/package/minf-tp1-cm-az.x.tar
+CND_PACKAGE_NAME_default=minf-tp2-pwm&rs232.x.tar
+CND_PACKAGE_PATH_default=${CND_DISTDIR}/default/package/minf-tp2-pwm&rs232.x.tar
