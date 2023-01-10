@@ -37,6 +37,9 @@
         </logicalFolder>
         <itemPath>../src/app.h</itemPath>
         <itemPath>../src/GestPWM.h</itemPath>
+        <itemPath>../src/GesFifoTh32.h</itemPath>
+        <itemPath>../src/Mc32CalCrc16.h</itemPath>
+        <itemPath>../src/Mc32gest_RS232.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f2" displayName="bsp" projectFiles="true">
         <logicalFolder name="f1" displayName="pic32mx_skes" projectFiles="true">
@@ -171,6 +174,9 @@
         <itemPath>../src/app.c</itemPath>
         <itemPath>../src/main.c</itemPath>
         <itemPath>../src/GestPWM.c</itemPath>
+        <itemPath>../src/GesFifoTh32.c</itemPath>
+        <itemPath>../src/Mc32CalCrc16.c</itemPath>
+        <itemPath>../src/Mc32gest_RS232.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f2" displayName="bsp" projectFiles="true">
         <logicalFolder name="f1" displayName="pic32mx_skes" projectFiles="true">

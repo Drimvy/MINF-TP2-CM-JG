@@ -94,7 +94,7 @@ SYS_MODULE_OBJ DRV_USART0_Initialize(void)
        is not empty */
     PLIB_USART_InitializeOperation(USART_ID_1,
             USART_RECEIVE_FIFO_ONE_CHAR,
-            USART_TRANSMIT_FIFO_IDLE,
+            USART_TRANSMIT_FIFO_EMPTY,
             USART_ENABLE_TX_RX_USED);
 
     /* Get the USART clock source value*/

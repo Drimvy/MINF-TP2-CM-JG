@@ -173,6 +173,8 @@ void APP_Tasks ( void )
             DRV_OC0_Start();
             //init OC1 
             DRV_OC1_Start(); 
+            //init USART0
+            DRV_USART0_Initialize();
             
             //Initialisation l'ADc
             BSP_InitADC10();
