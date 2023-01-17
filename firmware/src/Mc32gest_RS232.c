@@ -77,16 +77,28 @@ void InitFifoComm(void)
 int GetMessage(S_pwmSettings *pData)
 {
     int commStatus = 0;
+    int NbCharToRead;
     
-    // Traitement de réception à introduire ICI
+    // Retourne le nombre de caractères à lire
+    NbCharToRead = GetReadSize(&descrFifoRX);
+    if(NbCharToRead >= MESS_SIZE)
+    {
+       // Traitement de réception à introduire ICI 
+        
+    }
+    
+    
     // Lecture et décodage fifo réception
+    
     // ...
     
     
     // Gestion controle de flux de la réception
-    if(GetWriteSpace ( &descrFifoRX) >= (2*MESS_SIZE)) {
+    if(GetWriteSpace ( &descrFifoRX) >= (2*MESS_SIZE)) 
+    {
         // autorise émission par l'autre
         RS232_RTS = 0;
+        
     }
     return commStatus;
 } // GetMessage
@@ -146,8 +158,10 @@ void SendMessage(S_pwmSettings *pData)
 
             // Traitement RX à faire ICI
             // Lecture des caractères depuis le buffer HW -> fifo SW
-			//  (pour savoir s'il y a une data dans le buffer HW RX : PLIB_USART_ReceiverDataIsAvailable())
-			//  (Lecture via fonction PLIB_USART_ReceiverByteReceive())
+			//  (pour savoir s'il y a une data dans le buffer HW RX : 
+            PLIB_USART_ReceiverDataIsAvailable();
+			//  (Lecture via fonction )
+            PLIB_USART_ReceiverByteReceive();
             // ...
             
                          

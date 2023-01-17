@@ -15,7 +15,7 @@
 
 #include <stdint.h>
 #include "Mc32DriverAdc.h"
-#include "app.h"
+//#include "app.h"
 
 
 /*--------------------------------------------------------*/
@@ -46,16 +46,27 @@ typedef struct {
     uint8_t cntAdc;  
     
 } S_pwmSettings;
-
-
 extern S_pwmSettings PwmData;
+
+typedef struct {
+    
+    /* Variables consignes */
+
+    float SpeedSetting; // consigne vitesse -99 à +99
+    float AngleSetting; // consigne angle  -90 à +90
+    
+    
+} S_pwmSetToSend;
+extern S_pwmSetToSend PwmDataToSend;
+
+
 
 void GPWM_Initialize(S_pwmSettings *pData);
 
 // Ces 3 fonctions ont pour paramètre un pointeur sur la structure S_pwmSettings.
 void GPWM_ReadAdcFiltered(S_pwmSettings *pData);
 void GPWM_GetSettings(S_pwmSettings *pData);	// Obtention vitesse et angle
-void GPWM_DispSettings(S_pwmSettings *pData);	// Affichage
+void GPWM_DispSettings(S_pwmSettings *pData, int Remote);	// Affichage
 void GPWM_ExecPWM(S_pwmSettings *pData);		// Execution PWM et gestion moteur.
 void GPWM_ExecPWMSoft(S_pwmSettings *pData);		// Execution PWM software.
 

@@ -18,6 +18,7 @@
 #include "Mc32DriverLcd.h"
 #include "app.h"
 #include "peripheral/oc/plib_oc.h"
+#include "GesFifoTh32.h"
 
 //S_pwmSettings PWMData;      // pour les settings
 //S_ADCResults ReadAdc;
@@ -49,6 +50,10 @@ void GPWM_Initialize(S_pwmSettings *pData)
     // init OC1
     DRV_OC1_Start ();
     
+    DRV_USART0_Initialize();
+    
+    InitFifo( &pDescrFifo, FifoSize, &pDebFifo, InitVal);
+    
 }
 
 // Obtention vitesse et angle (mise a jour des 4 champs de la structure)
@@ -73,25 +78,34 @@ void GPWM_GetSettings(S_pwmSettings *pData)
 
 
 // Affichage des information en exploitant la structure
-void GPWM_DispSettings(S_pwmSettings *pData)
+void GPWM_DispSettings(S_pwmSettings *pData, int Remote)
 {   
-            lcd_gotoxy(1,1);
-            printf_lcd("TP1 PWM 2022-2023");
-            lcd_gotoxy(1,2);
-            /* Affichage vitesse */
-            printf_lcd("SpeedSetting");
-            lcd_gotoxy(17,2);
-            printf_lcd("%4d", (int)pData->SpeedSetting);
-            /* Affichage vitesse absolue */
-            lcd_gotoxy(1,3);
-            printf_lcd("absSpeed");
-            lcd_gotoxy(17,3);
-            printf_lcd("%4d", (int)pData->absSpeed);
-            /* Afficahge de l'angle */
-            lcd_gotoxy(1,4);
-            printf_lcd("Angle");
-            lcd_gotoxy(17,4);
-            printf_lcd("%4d", (int)pData->AngleSetting);
+    if (Remote == 1)
+    {
+        lcd_gotoxy(1,1);
+        printf_lcd("Remote settings");
+    }
+    else
+    {
+        lcd_gotoxy(1,1);
+        printf_lcd("Local settings");
+    }
+           
+    lcd_gotoxy(1,2);
+    /* Affichage vitesse */
+    printf_lcd("SpeedSetting");
+    lcd_gotoxy(17,2);
+    printf_lcd("%4d", (int)pData->SpeedSetting);
+    /* Affichage vitesse absolue */
+    lcd_gotoxy(1,3);
+    printf_lcd("absSpeed");
+    lcd_gotoxy(17,3);
+    printf_lcd("%4d", (int)pData->absSpeed);
+    /* Afficahge de l'angle */
+    lcd_gotoxy(1,4);
+    printf_lcd("Angle");
+    lcd_gotoxy(17,4);
+    printf_lcd("%4d", (int)pData->AngleSetting);
             
             
 }

@@ -59,6 +59,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include  "Mc32Delays.h"
 #include "Mc32gest_RS232.h"
 #include "GestPWM.h"
+#include <stdint.h>
 
 // *****************************************************************************
 // *****************************************************************************
@@ -143,6 +144,7 @@ void APP_Initialize ( void )
 
 void APP_Tasks ( void )
 {
+     uint8_t CommStatus;
 
     /* Check the application's current state. */
     switch ( appData.state )
@@ -152,23 +154,18 @@ void APP_Tasks ( void )
         {
             /* Initialisation Displaying */
             lcd_init(); 
-            printf_lcd("TP2 PWM 2022-2023");
+            printf_lcd("Local settings");
             lcd_gotoxy(1,2);
-            printf_lcd("Joao"); 
+            printf_lcd("TP2 PWM 2022-2023");
             lcd_gotoxy(1,3);
+            printf_lcd("Joao Marques"); 
+            lcd_gotoxy(1,4);
             printf_lcd("Caroline Mieville"); 
             lcd_bl_on();
             
             /* Peripherals initalisations */
             /*initalisation des timers*/
-            // DRV_TMR0_Start();  
-            DRV_TMR0_Start();
-            // DRV_TMR1_Start();  
-            DRV_TMR1_Start();           
-            // DRV_TMR2_Start();  
-            DRV_TMR2_Start();            
 
-            
             /*Initialisation des OC*/
              /* Initialisations des périphériques */
             GPWM_Initialize (&PwmData);
@@ -189,11 +186,31 @@ void APP_Tasks ( void )
             
             break;
         }
+        
         case APP_STATE_SERVICE_TASKS:
-        {
-            GPWM_GetSettings(&PwmData);
-            GPWM_DispSettings(&PwmData);
+        { 
+         
+            CommStatus = GetMessage(&PwmData);
+            
+            if (CommStatus == 0)
+            {
+                GPWM_GetSettings(&PwmData);
+            }
+            else 
+            {
+                GPWM_GetSettings(&PwmDataToSend);
+            }
+            GPWM_DispSettings(&PwmData,CommStatus);
             GPWM_ExecPWM(&PwmData);
+            if (CommStatus == 0)
+            {
+                SendMessage(&PwmData);
+            }
+            else 
+            {
+                SendMessage(&PwmDataToSend);
+            }
+            appData.state = APP_STATE_WAIT;
             break;
         }
 

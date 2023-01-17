@@ -144,7 +144,8 @@ uint8_t GetCharFromFifo ( S_fifo *pDescrFifo, int8_t *carLu )
       // incrément du pointeur de lecture
       pDescrFifo->pRead++;
       // gestion du rebouclement
-      if (pDescrFifo->pRead > pDescrFifo->pFinFifo) {
+      if (pDescrFifo->pRead > pDescrFifo->pFinFifo) 
+      {
           pDescrFifo->pRead = pDescrFifo->pDebFifo;
       }
       readStatus = 0; // OK
