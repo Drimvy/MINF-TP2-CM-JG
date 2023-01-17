@@ -54,9 +54,9 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 // *****************************************************************************
 
 #include "app.h"
-#include "GestPWM.h"
-#include "Mc32DriverLcd.h"
-#include "Mc32Delays.h"
+#include  "GestPWM.h"
+#include  "Mc32DriverLcd.h"
+#include  "Mc32Delays.h"
 #include "Mc32gest_RS232.h"
 #include "GestPWM.h"
 
@@ -170,26 +170,17 @@ void APP_Tasks ( void )
 
             
             /*Initialisation des OC*/
-            //init OC0 
-            DRV_OC0_Start();
-            //init OC1 
-            DRV_OC1_Start(); 
-            //init USART0
-            DRV_USART0_Initialize();
+             /* Initialisations des périphériques */
+            GPWM_Initialize (&PwmData);
             
-            //Initialisation l'ADc
-            BSP_InitADC10();
+            // Initialisation de l'ADc
+            BSP_InitADC10 ();
             
-            //initialiser le Hbrige
-            BSP_EnableHbrige();
+            /* Mettre à jour l'état */
+            APP_UpdateState (APP_STATE_WAIT);
             
-            /* Initialize GPWM */
-            InitFifoComm();
-            
-            APP_UpdateState(APP_STATE_WAIT);
-            
-            /* All LEDS ON */
-            APP_LedMask(0x00);
+            /* Toutes les LED allumées */
+            APP_LedMask ( 0x00 );
             
             break;
         }
