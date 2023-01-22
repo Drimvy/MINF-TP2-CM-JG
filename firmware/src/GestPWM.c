@@ -45,14 +45,12 @@ void GPWM_Initialize(S_pwmSettings *pData)
 
 
     /* Initialisation des OC */
-    // init OC0
+    // init OC0 activer OC2
     DRV_OC0_Start ();
-    // init OC1
+    // init OC1 activer OC3
     DRV_OC1_Start ();
     
-    DRV_USART0_Initialize();
-    
-    InitFifo( &pDescrFifo, FifoSize, &pDebFifo, InitVal);
+
     
 }
 

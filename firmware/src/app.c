@@ -163,15 +163,19 @@ void APP_Tasks ( void )
             printf_lcd("Caroline Mieville"); 
             lcd_bl_on();
             
-            /* Peripherals initalisations */
-            /*initalisation des timers*/
-
+            
             /*Initialisation des OC*/
              /* Initialisations des périphériques */
             GPWM_Initialize (&PwmData);
             
-            // Initialisation de l'ADc
+            // Initialisation de l'ADC
             BSP_InitADC10 ();
+            
+            //Initialisation de UART (USART_ID_1)
+            DRV_USART0_Initialize();
+            
+            // Initialisation de la communication sérielle
+            InitFifo();
             
             /* Mettre à jour l'état */
             APP_UpdateState (APP_STATE_WAIT);

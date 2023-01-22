@@ -8,7 +8,6 @@
 #include <xc.h>
 #include <sys/attribs.h>
 #include "system_definitions.h"
-// Ajout CHR
 #include <GenericTypeDefs.h>
 #include "app.h"
 #include "GesFifoTh32.h"
@@ -50,12 +49,12 @@ StruMess RxMess;
 
 int8_t fifoRX[FIFO_RX_SIZE];
 // Declaration du descripteur du FIFO de réception
-S_fifo descrFifoRX;
+S_fifo *descrFifoRX;
 
 
 int8_t fifoTX[FIFO_TX_SIZE];
 // Declaration du descripteur du FIFO d'émission
-S_fifo descrFifoTX;
+S_fifo *descrFifoTX;
 
 
 // Initialisation de la communication sérielle
@@ -76,23 +75,87 @@ void InitFifoComm(void)
 // Valeur de retour 1  = message reçu donc en remote (data mis à jour)
 int GetMessage(S_pwmSettings *pData)
 {
-    int commStatus = 0;
-    int NbCharToRead;
+    bool commStatus = 0;
+    int32_t NbCharToRead;
+    uint8_t TailleChar= 0;
     
     // Retourne le nombre de caractères à lire
     NbCharToRead = GetReadSize(&descrFifoRX);
     if(NbCharToRead >= MESS_SIZE)
     {
+        
        // Traitement de réception à introduire ICI 
         
+        TailleChar = GetCharFromFifo(&descrFifoRX,RxMess.Start );
+        if(TailleChar != 0)
+        {
+           commStatus = 0; 
+        }
+        TailleChar = GetCharFromFifo(&descrFifoRX,RxMess.Speed );
+        if(TailleChar != 0)
+        {
+           commStatus = 0; 
+        }
+        TailleChar = GetCharFromFifo(&descrFifoRX,RxMess.Angle);
+        if(TailleChar != 0)
+        {
+           commStatus = 0; 
+        }
+        TailleChar = GetCharFromFifo(&descrFifoRX,TxMess.MsbCrc);
+        if(TailleChar != 0)
+        {
+           commStatus = 0; 
+        }
+        TailleChar = GetCharFromFifo(&descrFifoRX,TxMess.LsbCrc);
+        if(TailleChar != 0)
+        {
+           commStatus = 0; 
+        }
+       
+    }
+    else
+    {
+        commStatus = 0;
     }
     
     
     // Lecture et décodage fifo réception
-    
-    // ...
-    
-    
+    if(RxMess.Start == 0xAA)
+    {
+        //initailiser le CRC
+        uint16_t OLD_CRC = 0XFFFF;
+        uint16_t NEW_CRC;
+        uint8_t controle_LCB;
+        uint8_t controle_MCB;
+        //Calcul de CRC à 0xFFFF et soustraire le message start
+        NEW_CRC = updateCRC16(OLD_CRC, RxMess.Start );
+        OLD_CRC = NEW_CRC;
+        //Soustraire le message speed au CRC
+        NEW_CRC = updateCRC16(OLD_CRC, RxMess.Speed );
+        OLD_CRC = NEW_CRC;
+        //Soustraire le message angle au CRC
+        NEW_CRC = updateCRC16(OLD_CRC, RxMess.Angle );
+        //extraire du CRC le MSB 
+        controle_MCB = (NEW_CRC>>4)& 0XFF00;
+        //extraire du CRC le LSB 
+        controle_LCB = NEW_CRC & 0XFF00;
+        
+        if((RxMess.MsbCrc == controle_MCB) && (RxMess.LsbCrc == controle_LCB))
+        {
+            pData->AngleSetting = RxMess.Angle;
+            pData->SpeedSetting = RxMess.Speed;
+            commStatus = 1;
+        }
+        else
+        {
+            commStatus =0;
+        }
+    }
+    else
+    {
+        commStatus = 0;
+    }   
+
     // Gestion controle de flux de la réception
     if(GetWriteSpace ( &descrFifoRX) >= (2*MESS_SIZE)) 
     {
@@ -107,11 +170,49 @@ int GetMessage(S_pwmSettings *pData)
 // Fonction d'envoi des messages, appel cyclique
 void SendMessage(S_pwmSettings *pData)
 {
-    int8_t freeSize;
+    int32_t freeSize;
+    uint8_t Fifo_Full;
+    //initailiser le CRC
+    uint16_t OLD_CRC = 0XFFFF;
+    uint16_t NEW_CRC;
+    
+    
+
+    //verifier la place 
+    freeSize = GetWriteSpace ( &descrFifoRX);
     
     // Traitement émission à introduire ICI
-    // Formatage message et remplissage fifo émission
-    // ...
+    if(freeSize >= MESS_SIZE)
+    {       
+        //compose le message
+        //Initalise le start du message
+        TxMess.Start = 0XAA;
+        //Initalise la vitesse du message
+        TxMess.Speed = pData->SpeedSetting ;
+        //Initalise la angle du message
+        TxMess.Angle = pData->AngleSetting;
+        
+        //Calcule du CRC pour l'envoie
+        //Initialiser le CRC à 0xFFFF et soustraire le message start
+        NEW_CRC = updateCRC16(OLD_CRC, TxMess.Start );
+        OLD_CRC = NEW_CRC;
+        //Soustraire le message speed au CRC
+        NEW_CRC = updateCRC16(OLD_CRC, TxMess.Speed );
+        OLD_CRC = NEW_CRC;
+        //Soustraire le message angle au CRC
+        NEW_CRC = updateCRC16(OLD_CRC, TxMess.Angle );
+        //extraire du CRC le MSB 
+        TxMess.MsbCrc = (NEW_CRC>>4)& 0XFF00;
+        //extraire du CRC le LSB 
+        TxMess.LsbCrc = NEW_CRC & 0XFF00;
+        // remplissage fifo émission
+        Fifo_Full = PutCharInFifo (&descrFifoRX, TxMess.Start);
+        Fifo_Full = PutCharInFifo (&descrFifoRX, TxMess.Speed);
+        Fifo_Full = PutCharInFifo (&descrFifoRX, TxMess.Angle);
+        Fifo_Full = PutCharInFifo (&descrFifoRX, TxMess.MsbCrc);
+        Fifo_Full = PutCharInFifo (&descrFifoRX, TxMess.LsbCrc);
+    }
+    
     
     
     // Gestion du controle de flux
@@ -159,7 +260,7 @@ void SendMessage(S_pwmSettings *pData)
             // Traitement RX à faire ICI
             // Lecture des caractères depuis le buffer HW -> fifo SW
 			//  (pour savoir s'il y a une data dans le buffer HW RX : 
-            PLIB_USART_ReceiverDataIsAvailable();
+            PLIB_USART_ReceiverDataIsAvailable(USART_ID_1);
 			//  (Lecture via fonction )
             PLIB_USART_ReceiverByteReceive();
             // ...
@@ -193,9 +294,11 @@ void SendMessage(S_pwmSettings *pData)
         // Envoi des caractères depuis le fifo SW -> buffer HW
             
         // Avant d'émettre, on vérifie 3 conditions :
+        
         //  Si CTS = 0 autorisation d'émettre (entrée RS232_CTS)
         //  S'il y a un caratères à émettre dans le fifo
-        //  S'il y a de la place dans le buffer d'émission (PLIB_USART_TransmitterBufferIsFull)
+        //  S'il y a de la place dans le buffer d'émission (
+        PLIB_USART_TransmitterBufferIsFull()
         //   (envoi avec PLIB_USART_TransmitterByteSend())
        
         // ...

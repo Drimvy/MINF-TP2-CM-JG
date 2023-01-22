@@ -55,6 +55,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 
 #include "system_config.h"
 #include "system_definitions.h"
+#include "GesFifoTh32.h"
 
 
 // *****************************************************************************
@@ -274,6 +275,7 @@ void _DRV_USART0_ErrorConditionClear()
          * blocking here if more error bytes are received*/
         if(0u == RXlength)
         {
+            //InitFifoComm();
             break;
         }
     }
