@@ -54,10 +54,12 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 // *****************************************************************************
 
 #include "app.h"
+#include  "GestPWM.h"
+#include  "Mc32DriverLcd.h"
+#include  "Mc32Delays.h"
+#include "Mc32gest_RS232.h"
 #include "GestPWM.h"
-#include "Mc32DriverLcd.h"
-#include "Mc32Delays.h"
-
+#include <stdint.h>
 
 // *****************************************************************************
 // *****************************************************************************
@@ -81,7 +83,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 */
 
 APP_DATA appData;
-S_pwmSettings PwmData;
+
 
 uint8_t LedOffFlag = 1;
 uint8_t chenillard = 0b00000001;
@@ -142,6 +144,7 @@ void APP_Initialize ( void )
 
 void APP_Tasks ( void )
 {
+     uint8_t CommStatus;
 
     /* Check the application's current state. */
     switch ( appData.state )
@@ -151,43 +154,34 @@ void APP_Tasks ( void )
         {
             /* Initialisation Displaying */
             lcd_init(); 
-            printf_lcd("TP1 PWM 2022-2023");
+            printf_lcd("Local settings");
             lcd_gotoxy(1,2);
-            printf_lcd("Ali Zoubir"); 
+            printf_lcd("TP2 PWM 2022-2023");
             lcd_gotoxy(1,3);
-            printf_lcd("Caroline Miéville"); 
+            printf_lcd("Joao Marques"); 
+            lcd_gotoxy(1,4);
+            printf_lcd("Caroline Mieville"); 
             lcd_bl_on();
             
-            /* Peripherals initalisations */
-            /*initalisation des timers*/
-            // DRV_TMR0_Start();  
-            DRV_TMR0_Start();
-            // DRV_TMR1_Start();  
-            DRV_TMR1_Start();           
-            // DRV_TMR2_Start();  
-            DRV_TMR2_Start();            
-            // DRV_TMR3_Start();  
-            DRV_TMR3_Start();
             
             /*Initialisation des OC*/
-            //init OC0 
-            DRV_OC0_Start();
-            //init OC1 
-            DRV_OC1_Start(); 
+             /* Initialisations des périphériques */
+            GPWM_Initialize (&PwmData);
             
-            //Initialisation l'ADc
-            BSP_InitADC10();
+            // Initialisation de l'ADC
+            BSP_InitADC10 ();
             
-            //initialiser le Hbrige
-            BSP_EnableHbrige();
+            //Initialisation de UART (USART_ID_1)
+            DRV_USART0_Initialize();
             
-            /* Initialize GPWM */
-            GPWM_Initialize(&PwmData);
+            // Initialisation de la communication sérielle           
+            InitFifoComm();
+                    
+            /* Mettre à jour l'état */
+            APP_UpdateState (APP_STATE_WAIT);
             
-            APP_UpdateState(APP_STATE_WAIT);
-            
-            /* All LEDS ON */
-            APP_LedMask(0x00);
+            /* Toutes les LED allumées */
+            APP_LedMask ( 0x00 );
             
             break;
         }
@@ -196,9 +190,36 @@ void APP_Tasks ( void )
             
             break;
         }
+        
         case APP_STATE_SERVICE_TASKS:
-        {
+        { 
+
+            //reception param. remote
+            CommStatus = GetMessage(&PwmData);
             
+            //lecture pot.
+            if (CommStatus == 0)//local?
+            {
+                GPWM_GetSettings(&PwmData);//local
+            }
+            else 
+            {
+                GPWM_GetSettings(&PwmDataToSend);//remote
+            }
+            //affichage
+            GPWM_DispSettings(&PwmData,CommStatus);
+            //execution PWM et gestion moteur
+            GPWM_ExecPWM(&PwmData);
+            //envoi valeurs
+            if (CommStatus == 0) //local?
+            {
+                SendMessage(&PwmData); //local
+            }
+            else 
+            {
+                SendMessage(&PwmDataToSend); //remote
+            }
+            appData.state = APP_STATE_WAIT;
             break;
         }
 
