@@ -149,6 +149,11 @@ void DRV_OC_CompareValuesDualSet(DRV_HANDLE handle, uint32_t priVal, uint32_t se
 
     switch(handle)
     {
+        case DRV_OC_INDEX_1:
+        {
+            DRV_OC1_CompareValuesDualSet(priVal, secVal);
+            break;
+        }
         default:
         {
             SYS_ASSERT(false, "The selected instance of the OC driver is not configured for the Dual Compare match mode");
@@ -167,11 +172,6 @@ void DRV_OC_PulseWidthSet(DRV_HANDLE handle, uint32_t pulseWidth)
         case DRV_OC_INDEX_0:
         {
             DRV_OC0_PulseWidthSet(pulseWidth);
-            break;
-        }
-        case DRV_OC_INDEX_1:
-        {
-            DRV_OC1_PulseWidthSet(pulseWidth);
             break;
         }
         default:

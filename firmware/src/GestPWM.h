@@ -15,7 +15,7 @@
 
 #include <stdint.h>
 #include "Mc32DriverAdc.h"
-//#include "app.h"
+#include "app.h"
 
 
 /*--------------------------------------------------------*/
@@ -46,18 +46,21 @@ typedef struct {
     uint8_t cntAdc;  
     
 } S_pwmSettings;
-extern S_pwmSettings PwmData;
 
-typedef struct {
+extern S_pwmSettings PwmData;
+extern S_pwmSettings PwmDataToSend;
+
+
+/*typedef struct {
     
-    /* Variables consignes */
+    // Variables consignes 
 
     float SpeedSetting; // consigne vitesse -99 à +99
     float AngleSetting; // consigne angle  -90 à +90
     
     
-} S_pwmSetToSend;
-extern S_pwmSetToSend PwmDataToSend;
+} S_pwmSetToSend;*/
+//extern S_pwmSetToSend PwmDataToSend;
 
 
 

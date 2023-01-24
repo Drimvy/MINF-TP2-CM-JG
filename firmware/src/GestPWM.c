@@ -24,6 +24,7 @@
 //S_ADCResults ReadAdc;
 
 S_pwmSettings PwmData = {.cntAdc=0};
+S_pwmSettings PwmDataToSend;
         
 void GPWM_Initialize(S_pwmSettings *pData)
 {

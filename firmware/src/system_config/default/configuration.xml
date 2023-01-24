@@ -231,17 +231,18 @@
       <Template dnOrder="8">
         <Name dnOrder="0">drv_oc_mapping.c</Name>
         <Path dnOrder="1">Source&amp;#160;Files/app/system_config/default/framework/driver/oc/src</Path>
-        <Checksum dnOrder="2">5FF5CD3AD70FFFBABCA9FEE23345B070</Checksum>
+        <Checksum dnOrder="2">900A6D579D145D8AD9646F52EC9E2146</Checksum>
       </Template>
       <Template dnOrder="9">
         <Name dnOrder="0">drv_oc_static.c</Name>
         <Path dnOrder="1">Source&amp;#160;Files/app/system_config/default/framework/driver/oc/src</Path>
-        <Checksum dnOrder="2">05F11D0FA55DFB5AAB69885FF789B0B6</Checksum>
+        <Checksum dnOrder="2">FE96BD43A66588D0E5975273BA95E1B6</Checksum>
       </Template>
       <Template dnOrder="10">
         <Name dnOrder="0">drv_usart_static.c</Name>
         <Path dnOrder="1">Source&amp;#160;Files/app/system_config/default/framework/driver/usart/src</Path>
         <Checksum dnOrder="2">7FECF1CCAEB411E06BF6AE1692E7FE3E</Checksum>
+        <ProjectFileChecksum dnOrder="3">12D0E732424E08BB7F78B245F4A3F438</ProjectFileChecksum>
       </Template>
       <Template dnOrder="11">
         <Name dnOrder="0">system_init.c</Name>
@@ -251,7 +252,7 @@
       <Template dnOrder="12">
         <Name dnOrder="0">drv_oc_static.h</Name>
         <Path dnOrder="1">Header&amp;#160;Files/app/system_config/default/framework/driver/oc</Path>
-        <Checksum dnOrder="2">0496F2F0681A9421EFECF50A8979E68E</Checksum>
+        <Checksum dnOrder="2">6164CB0D644126C305EA1AA44FA98140</Checksum>
       </Template>
       <Template dnOrder="13">
         <Name dnOrder="0">main.c</Name>

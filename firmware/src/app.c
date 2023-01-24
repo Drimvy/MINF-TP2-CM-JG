@@ -174,9 +174,9 @@ void APP_Tasks ( void )
             //Initialisation de UART (USART_ID_1)
             DRV_USART0_Initialize();
             
-            // Initialisation de la communication sérielle
-            InitFifo();
-            
+            // Initialisation de la communication sérielle           
+            InitFifoComm();
+                    
             /* Mettre à jour l'état */
             APP_UpdateState (APP_STATE_WAIT);
             
@@ -193,26 +193,31 @@ void APP_Tasks ( void )
         
         case APP_STATE_SERVICE_TASKS:
         { 
-         
+
+            //reception param. remote
             CommStatus = GetMessage(&PwmData);
             
-            if (CommStatus == 0)
+            //lecture pot.
+            if (CommStatus == 0)//local?
             {
-                GPWM_GetSettings(&PwmData);
+                GPWM_GetSettings(&PwmData);//local
             }
             else 
             {
-                GPWM_GetSettings(&PwmDataToSend);
+                GPWM_GetSettings(&PwmDataToSend);//remote
             }
+            //affichage
             GPWM_DispSettings(&PwmData,CommStatus);
+            //execution PWM et gestion moteur
             GPWM_ExecPWM(&PwmData);
-            if (CommStatus == 0)
+            //envoi valeurs
+            if (CommStatus == 0) //local?
             {
-                SendMessage(&PwmData);
+                SendMessage(&PwmData); //local
             }
             else 
             {
-                SendMessage(&PwmDataToSend);
+                SendMessage(&PwmDataToSend); //remote
             }
             appData.state = APP_STATE_WAIT;
             break;

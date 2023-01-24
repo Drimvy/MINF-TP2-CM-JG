@@ -244,7 +244,8 @@ build/default/production/_ext/327000265/drv_usart_static.o: \
  ../../../../../../framework/system/debug/sys_debug.h \
  ../../../../../../framework/system/ports/sys_ports.h \
  ../../../../../../framework/system/ports/sys_ports_definitions.h \
- ../src/app.h ../../../../../../bsp/pic32mx_skes/Mc32DriverAdc.h
+ ../src/app.h ../../../../../../bsp/pic32mx_skes/Mc32DriverAdc.h \
+ ../src/GesFifoTh32.h
 
 ../src/system_config/default/system_config.h:
 
@@ -737,3 +738,5 @@ build/default/production/_ext/327000265/drv_usart_static.o: \
 ../src/app.h:
 
 ../../../../../../bsp/pic32mx_skes/Mc32DriverAdc.h:
+
+../src/GesFifoTh32.h:

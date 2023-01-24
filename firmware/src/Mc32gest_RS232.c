@@ -30,11 +30,11 @@ typedef union {
 
 // Structure décrivant le message
 typedef struct {
-    uint8_t Start;
+    int8_t Start;
     int8_t  Speed;
     int8_t  Angle;
-    uint8_t MsbCrc;
-    uint8_t LsbCrc;
+    int8_t MsbCrc;
+    int8_t LsbCrc;
 } StruMess;
 
 
@@ -49,12 +49,12 @@ StruMess RxMess;
 
 int8_t fifoRX[FIFO_RX_SIZE];
 // Declaration du descripteur du FIFO de réception
-S_fifo *descrFifoRX;
+S_fifo descrFifoRX;
 
 
 int8_t fifoTX[FIFO_TX_SIZE];
 // Declaration du descripteur du FIFO d'émission
-S_fifo *descrFifoTX;
+S_fifo descrFifoTX;
 
 
 // Initialisation de la communication sérielle
@@ -79,6 +79,11 @@ int GetMessage(S_pwmSettings *pData)
     int32_t NbCharToRead;
     uint8_t TailleChar= 0;
     
+    uint16_t OLD_CRC = 0XFFFF;
+    uint16_t NEW_CRC;
+    uint8_t controle_LCB;
+    uint8_t controle_MCB;
+    
     // Retourne le nombre de caractères à lire
     NbCharToRead = GetReadSize(&descrFifoRX);
     if(NbCharToRead >= MESS_SIZE)
@@ -86,32 +91,31 @@ int GetMessage(S_pwmSettings *pData)
         
        // Traitement de réception à introduire ICI 
         
-        TailleChar = GetCharFromFifo(&descrFifoRX,RxMess.Start );
+        TailleChar = GetCharFromFifo(&descrFifoRX,&RxMess.Start );
         if(TailleChar != 0)
         {
            commStatus = 0; 
         }
-        TailleChar = GetCharFromFifo(&descrFifoRX,RxMess.Speed );
+        TailleChar = GetCharFromFifo(&descrFifoRX,&RxMess.Speed );
         if(TailleChar != 0)
         {
            commStatus = 0; 
         }
-        TailleChar = GetCharFromFifo(&descrFifoRX,RxMess.Angle);
+        TailleChar = GetCharFromFifo(&descrFifoRX,&RxMess.Angle);
         if(TailleChar != 0)
         {
            commStatus = 0; 
         }
-        TailleChar = GetCharFromFifo(&descrFifoRX,TxMess.MsbCrc);
+        TailleChar = GetCharFromFifo(&descrFifoRX,&RxMess.MsbCrc);
         if(TailleChar != 0)
         {
            commStatus = 0; 
         }
-        TailleChar = GetCharFromFifo(&descrFifoRX,TxMess.LsbCrc);
+        TailleChar = GetCharFromFifo(&descrFifoRX,&RxMess.LsbCrc);
         if(TailleChar != 0)
         {
            commStatus = 0; 
         }
-       
     }
     else
     {
@@ -120,13 +124,9 @@ int GetMessage(S_pwmSettings *pData)
     
     
     // Lecture et décodage fifo réception
-    if(RxMess.Start == 0xAA)
+    if(RxMess.Start != 0xAA)
     {
-        //initailiser le CRC
-        uint16_t OLD_CRC = 0XFFFF;
-        uint16_t NEW_CRC;
-        uint8_t controle_LCB;
-        uint8_t controle_MCB;
+        
         //Calcul de CRC à 0xFFFF et soustraire le message start
         NEW_CRC = updateCRC16(OLD_CRC, RxMess.Start );
         OLD_CRC = NEW_CRC;
@@ -136,9 +136,9 @@ int GetMessage(S_pwmSettings *pData)
         //Soustraire le message angle au CRC
         NEW_CRC = updateCRC16(OLD_CRC, RxMess.Angle );
         //extraire du CRC le MSB 
-        controle_MCB = (NEW_CRC>>4)& 0XFF00;
+        controle_MCB = (NEW_CRC>>8)& 0xFF;
         //extraire du CRC le LSB 
-        controle_LCB = NEW_CRC & 0XFF00;
+        controle_LCB = NEW_CRC & 0xFF;
         
         if((RxMess.MsbCrc == controle_MCB) && (RxMess.LsbCrc == controle_LCB))
         {
@@ -171,10 +171,11 @@ int GetMessage(S_pwmSettings *pData)
 void SendMessage(S_pwmSettings *pData)
 {
     int32_t freeSize;
-    uint8_t Fifo_Full;
+    int8_t Fifo_Full;
     //initailiser le CRC
     uint16_t OLD_CRC = 0XFFFF;
     uint16_t NEW_CRC;
+    int16_t test;
     
     
 
@@ -202,23 +203,41 @@ void SendMessage(S_pwmSettings *pData)
         //Soustraire le message angle au CRC
         NEW_CRC = updateCRC16(OLD_CRC, TxMess.Angle );
         //extraire du CRC le MSB 
-        TxMess.MsbCrc = (NEW_CRC>>4)& 0XFF00;
+        TxMess.MsbCrc = (NEW_CRC>>8)& 0xFF;
         //extraire du CRC le LSB 
-        TxMess.LsbCrc = NEW_CRC & 0XFF00;
+        TxMess.LsbCrc = NEW_CRC & 0xFF;
+        
         // remplissage fifo émission
         Fifo_Full = PutCharInFifo (&descrFifoRX, TxMess.Start);
+        if(Fifo_Full == 1) //Est-ce que la FIFO est pleine?
+        {
+           InitFifoComm(); //réinitaliser la fifo pour la remplire de nouveau
+        }
+        
         Fifo_Full = PutCharInFifo (&descrFifoRX, TxMess.Speed);
+        if(Fifo_Full == 1)//Est-ce que la FIFO est pleine?
+        {
+           InitFifoComm(); //réinitaliser la fifo pour la remplire de nouveau
+        }
         Fifo_Full = PutCharInFifo (&descrFifoRX, TxMess.Angle);
+        if(Fifo_Full == 1)//Est-ce que la FIFO est pleine?
+        {
+           InitFifoComm(); //réinitaliser la fifo pour la remplire de nouveau
+        }
         Fifo_Full = PutCharInFifo (&descrFifoRX, TxMess.MsbCrc);
+        if(Fifo_Full == 1)//Est-ce que la FIFO est pleine?
+        {
+           InitFifoComm(); //réinitaliser la fifo pour la remplire de nouveau
+        }
         Fifo_Full = PutCharInFifo (&descrFifoRX, TxMess.LsbCrc);
     }
     
     
-    
+    test = RS232_CTS;
     // Gestion du controle de flux
     // si on a un caractère à envoyer et que CTS = 0
     freeSize = GetReadSize(&descrFifoTX);
-    if ((RS232_CTS == 0) && (freeSize > 0))
+    if ((RS232_CTS == 0) && (freeSize == 0))
     {
         // Autorise int émission    
         PLIB_INT_SourceEnable(INT_ID_0, INT_SOURCE_USART_1_TRANSMIT);                
@@ -233,14 +252,22 @@ void SendMessage(S_pwmSettings *pData)
  void __ISR(_UART_1_VECTOR, ipl5AUTO) _IntHandlerDrvUsartInstance0(void)
 {
     USART_ERROR UsartStatus;    
-
+    bool TxBuffFull;
+    int32_t Txsize;
+    bool i_cts;
+    int32_t freeSize;
+    bool ErrFiFoFull;
+    int8_t Car;
+    int8_t ptcarLu;
+       
 
     // Marque début interruption avec Led3
     LED3_W = 1;
     
     // Is this an Error interrupt ?
     if ( PLIB_INT_SourceFlagGet(INT_ID_0, INT_SOURCE_USART_1_ERROR) &&
-                 PLIB_INT_SourceIsEnabled(INT_ID_0, INT_SOURCE_USART_1_ERROR) ) {
+                 PLIB_INT_SourceIsEnabled(INT_ID_0, INT_SOURCE_USART_1_ERROR) ) 
+    {
         /* Clear pending interrupt */
         PLIB_INT_SourceFlagClear(INT_ID_0, INT_SOURCE_USART_1_ERROR);
         // Traitement de l'erreur à la réception.
@@ -249,30 +276,34 @@ void SendMessage(S_pwmSettings *pData)
 
     // Is this an RX interrupt ?
     if ( PLIB_INT_SourceFlagGet(INT_ID_0, INT_SOURCE_USART_1_RECEIVE) &&
-                 PLIB_INT_SourceIsEnabled(INT_ID_0, INT_SOURCE_USART_1_RECEIVE) ) {
+                 PLIB_INT_SourceIsEnabled(INT_ID_0, INT_SOURCE_USART_1_RECEIVE) ) 
+    {
 
         // Oui Test si erreur parité ou overrun
         UsartStatus = PLIB_USART_ErrorsGet(USART_ID_1);
 
-        if ( (UsartStatus & (USART_ERROR_PARITY |
-                             USART_ERROR_FRAMING | USART_ERROR_RECEIVER_OVERRUN)) == 0) {
-
+        if ( (UsartStatus & (USART_ERROR_PARITY | USART_ERROR_FRAMING | USART_ERROR_RECEIVER_OVERRUN)) == 0) 
+        {
+             // Transfert dans le FIFO de tous les chars reçus
             // Traitement RX à faire ICI
             // Lecture des caractères depuis le buffer HW -> fifo SW
 			//  (pour savoir s'il y a une data dans le buffer HW RX : 
-            PLIB_USART_ReceiverDataIsAvailable(USART_ID_1);
-			//  (Lecture via fonction )
-            PLIB_USART_ReceiverByteReceive();
-            // ...
-            
-                         
-            LED4_W = !LED4_R; // Toggle Led4
+            while (PLIB_USART_ReceiverDataIsAvailable(USART_ID_1))
+            {
+                Car = PLIB_USART_ReceiverByteReceive(USART_ID_1);
+                PutCharInFifo ( &descrFifoRX, Car);
+                LED4_W = !LED4_R; // Toggle Led4
+            }
+  
             // buffer is empty, clear interrupt flag
             PLIB_INT_SourceFlagClear(INT_ID_0, INT_SOURCE_USART_1_RECEIVE);
-        } else {
+        } 
+        else 
+        {
             // Suppression des erreurs
             // La lecture des erreurs les efface sauf pour overrun
-            if ( (UsartStatus & USART_ERROR_RECEIVER_OVERRUN) == USART_ERROR_RECEIVER_OVERRUN) {
+            if ( (UsartStatus & USART_ERROR_RECEIVER_OVERRUN) == USART_ERROR_RECEIVER_OVERRUN) 
+            {
                    PLIB_USART_ReceiverOverrunErrorClear(USART_ID_1);
             }
         }
@@ -281,6 +312,17 @@ void SendMessage(S_pwmSettings *pData)
         // Traitement controle de flux reception à faire ICI
         // Gerer sortie RS232_RTS en fonction de place dispo dans fifo reception
         // ...
+        // Traitement du contrôle de flux
+            freeSize = GetWriteSpace ( &descrFifoRX);
+            if (freeSize <= 6) // a cause d'un int pour 6 char
+            {
+            // Demande de ne plus émettre
+                RS232_RTS = 1;
+                if (freeSize == 0) 
+                {
+                    ErrFiFoFull = 1; // pour debugging
+                }
+            }
 
         
     } // end if RX
@@ -288,23 +330,36 @@ void SendMessage(S_pwmSettings *pData)
     
     // Is this an TX interrupt ?
     if ( PLIB_INT_SourceFlagGet(INT_ID_0, INT_SOURCE_USART_1_TRANSMIT) &&
-                 PLIB_INT_SourceIsEnabled(INT_ID_0, INT_SOURCE_USART_1_TRANSMIT) ) {
-
-        // Traitement TX à faire ICI
-        // Envoi des caractères depuis le fifo SW -> buffer HW
-            
+                 PLIB_INT_SourceIsEnabled(INT_ID_0, INT_SOURCE_USART_1_TRANSMIT) ) 
+    {
+        
         // Avant d'émettre, on vérifie 3 conditions :
         
         //  Si CTS = 0 autorisation d'émettre (entrée RS232_CTS)
         //  S'il y a un caratères à émettre dans le fifo
-        //  S'il y a de la place dans le buffer d'émission (
-        PLIB_USART_TransmitterBufferIsFull()
-        //   (envoi avec PLIB_USART_TransmitterByteSend())
-       
-        // ...
-       
-	   
-        LED5_W = !LED5_R; // Toggle Led5
+        //  S'il y a de la place dans le buffer d'émission
+        i_cts = RS232_CTS;
+        Txsize = GetReadSize (&descrFifoTX);
+        TxBuffFull = PLIB_USART_TransmitterBufferIsFull(USART_ID_1);
+        if ( (i_cts == 0) && ( Txsize > 0 ) && (TxBuffFull == false )) 
+        {
+            PutCharInFifo(&descrFifoTX, &ptcarLu); 
+            PLIB_USART_TransmitterByteSend(USART_ID_1,ptcarLu);
+        //   (envoi avec 
+            
+            /*do {
+                    GetCharFromFifo(&descrFifoTX, &ptcarLu);
+                    PLIB_USART_TransmitterByteSend(USART_ID_1,ptcarLu);
+                    LED5_W = !LED5_R; // Toggle Led5
+                    i_cts = RS232_CTS;
+                    Txsize = GetReadSize (&descrFifoTX);
+                    TxBuffFull = PLIB_USART_TransmitterBufferIsFull(USART_ID_1);
+                } while ( (i_cts == 0) && ( Txsize > 0 ) && TxBuffFull == false );*/
+                
+
+        }
+         LED5_W = !LED5_R; // Toggle Led5
+        
 		
         // disable TX interrupt (pour éviter une interrupt. inutile si plus rien à transmettre)
         PLIB_INT_SourceDisable(INT_ID_0, INT_SOURCE_USART_1_TRANSMIT);
