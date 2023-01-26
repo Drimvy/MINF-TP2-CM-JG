@@ -124,7 +124,7 @@ int GetMessage(S_pwmSettings *pData)
     
     
     // Lecture et décodage fifo réception
-    if(RxMess.Start != 0xAA)
+    if(RxMess.Start == 0xAA)
     {
         
         //Calcul de CRC à 0xFFFF et soustraire le message start
@@ -208,28 +208,28 @@ void SendMessage(S_pwmSettings *pData)
         TxMess.LsbCrc = NEW_CRC & 0xFF;
         
         // remplissage fifo émission
-        Fifo_Full = PutCharInFifo (&descrFifoRX, TxMess.Start);
+        Fifo_Full = PutCharInFifo (&descrFifoTX, TxMess.Start);
         if(Fifo_Full == 1) //Est-ce que la FIFO est pleine?
         {
            InitFifoComm(); //réinitaliser la fifo pour la remplire de nouveau
         }
         
-        Fifo_Full = PutCharInFifo (&descrFifoRX, TxMess.Speed);
+        Fifo_Full = PutCharInFifo (&descrFifoTX, TxMess.Speed);
         if(Fifo_Full == 1)//Est-ce que la FIFO est pleine?
         {
            InitFifoComm(); //réinitaliser la fifo pour la remplire de nouveau
         }
-        Fifo_Full = PutCharInFifo (&descrFifoRX, TxMess.Angle);
+        Fifo_Full = PutCharInFifo (&descrFifoTX, TxMess.Angle);
         if(Fifo_Full == 1)//Est-ce que la FIFO est pleine?
         {
            InitFifoComm(); //réinitaliser la fifo pour la remplire de nouveau
         }
-        Fifo_Full = PutCharInFifo (&descrFifoRX, TxMess.MsbCrc);
+        Fifo_Full = PutCharInFifo (&descrFifoTX, TxMess.MsbCrc);
         if(Fifo_Full == 1)//Est-ce que la FIFO est pleine?
         {
            InitFifoComm(); //réinitaliser la fifo pour la remplire de nouveau
         }
-        Fifo_Full = PutCharInFifo (&descrFifoRX, TxMess.LsbCrc);
+        Fifo_Full = PutCharInFifo (&descrFifoTX, TxMess.LsbCrc);
     }
     
     
@@ -237,7 +237,7 @@ void SendMessage(S_pwmSettings *pData)
     // Gestion du controle de flux
     // si on a un caractère à envoyer et que CTS = 0
     freeSize = GetReadSize(&descrFifoTX);
-    if ((RS232_CTS == 0) && (freeSize == 0))
+    if (RS232_CTS == 0)//((RS232_CTS == 0) && (freeSize < 16))
     {
         // Autorise int émission    
         PLIB_INT_SourceEnable(INT_ID_0, INT_SOURCE_USART_1_TRANSMIT);                
