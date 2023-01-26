@@ -89,12 +89,11 @@ int GetMessage(S_pwmSettings *pData)
     if(NbCharToRead >= MESS_SIZE)
     {
         
-       // Traitement de réception à introduire ICI 
-        
+       // Traitement de réception à introduire ICI        
         TailleChar = GetCharFromFifo(&descrFifoRX,&RxMess.Start );
-        if(TailleChar != 0)
+        if(TailleChar != 0)// est ce que le fifo est vide (donc pas de caratère entrée))
         {
-           commStatus = 0; 
+           commStatus = 0; //pas de message
         }
         TailleChar = GetCharFromFifo(&descrFifoRX,&RxMess.Speed );
         if(TailleChar != 0)
@@ -237,7 +236,7 @@ void SendMessage(S_pwmSettings *pData)
     // Gestion du controle de flux
     // si on a un caractère à envoyer et que CTS = 0
     freeSize = GetReadSize(&descrFifoTX);
-    if (RS232_CTS == 0)//((RS232_CTS == 0) && (freeSize < 16))
+    if((RS232_CTS == 0) && (freeSize >= 5))
     {
         // Autorise int émission    
         PLIB_INT_SourceEnable(INT_ID_0, INT_SOURCE_USART_1_TRANSMIT);                
